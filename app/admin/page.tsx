@@ -27,8 +27,8 @@ export default function AdminPage() {
       }
       setMessage({ type: "ok", text: "사건이 등록되었습니다." });
       setKeyword("");
-      router.push("/cases");
       router.refresh();
+      router.push("/cases");
     } catch {
       setMessage({ type: "err", text: "오류가 발생했습니다." });
     } finally {

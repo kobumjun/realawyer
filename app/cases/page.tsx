@@ -8,7 +8,7 @@ export default function CasesPage() {
   const [cases, setCases] = useState([]);
 
   useEffect(() => {
-    fetch("/api/cases")
+    fetch(`/api/cases?t=${Date.now()}`, { cache: "no-store" })
       .then((r) => r.json())
       .then(setCases)
       .catch(console.error);

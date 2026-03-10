@@ -8,13 +8,16 @@ export default async function CasePage({
 }: {
   params: { slug: string };
 }) {
-  const data = getCaseBySlug(params.slug);
+  const slug = params?.slug;
+  const data = slug ? getCaseBySlug(slug) : null;
 
   if (!data) {
     return (
       <>
         <Header />
-        <div style={{ padding: "40px" }}>Case not found</div>
+        <div className="max-w-6xl mx-auto px-6 py-12 text-gray-600">
+          사건을 찾을 수 없습니다.
+        </div>
       </>
     );
   }
@@ -22,10 +25,10 @@ export default async function CasePage({
   return (
     <>
       <Header />
-      <div style={{ padding: "40px" }}>
-      <h1>{data.title}</h1>
-      <p>{data.description}</p>
-    </div>
+      <div className="max-w-6xl mx-auto px-6 py-12">
+        <h1 className="text-2xl font-bold text-gray-900">{data.title}</h1>
+        <p className="text-gray-600 mt-4">{data.description}</p>
+      </div>
     </>
   );
 }

@@ -7,6 +7,10 @@ import initialCasesData from "@/data/cases.json";
 
 const RUNTIME_FILE = path.join(process.cwd(), "data", "runtime-cases.json");
 
+// In-memory fallback: on Vercel file writes fail, so new cases added via POST
+// are stored here. Same serverless instance will return them in GET.
+const runtimeMemoryStore: Case[] = [];
+
 function loadRuntimeCases(): Case[] {
   try {
     if (existsSync(RUNTIME_FILE)) {
@@ -23,7 +27,7 @@ function saveRuntimeCases(cases: Case[]): void {
   try {
     writeFileSync(RUNTIME_FILE, JSON.stringify(cases, null, 2), "utf-8");
   } catch {
-    // persist failed (e.g. read-only filesystem on Vercel)
+    // persist failed (e.g. read-only filesystem on Vercel) - in-memory fallback used
   }
 }
 
@@ -114,6 +118,7 @@ export function addCaseFromKeyword(keyword: string): Case {
   const runtime = loadRuntimeCases();
   runtime.push(newCase);
   saveRuntimeCases(runtime);
+  runtimeMemoryStore.push(newCase);
   return newCase;
 }
 
@@ -122,8 +127,10 @@ export function getCases(): Case[] {
     ...c,
     id: c.id || `initial-${c.slug}`,
   }));
-  const runtime = loadRuntimeCases();
-  return [...initial, ...runtime];
+  const fromFile = loadRuntimeCases();
+  const bySlug = new Map<string, Case>();
+  [...fromFile, ...runtimeMemoryStore].forEach((c) => bySlug.set(c.slug, c));
+  return [...initial, ...Array.from(bySlug.values())];
 }
 
 export function getCaseBySlug(slug: string): Case | null {
@@ -144,5 +151,6 @@ export function addCase(data: Omit<Case, "id" | "slug" | "createdAt">): Case {
   const runtime = loadRuntimeCases();
   runtime.push(newCase);
   saveRuntimeCases(runtime);
+  runtimeMemoryStore.push(newCase);
   return newCase;
 }
