@@ -126,7 +126,7 @@ export async function addCaseFromKeyword(keyword: string): Promise<Case> {
     slug,
     title: generated.title,
     description: generated.description,
-    keywords: generated.keywords,
+    keywords: [generated.keywords],
     victim_type: generated.victimType ?? null,
     damage_type: null,
     lawsuit_type: generated.lawsuitType ?? null,
