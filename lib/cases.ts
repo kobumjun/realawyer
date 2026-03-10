@@ -7,8 +7,10 @@ import initialCasesData from "@/data/cases.json";
 
 const RUNTIME_FILE = path.join(process.cwd(), "data", "runtime-cases.json");
 
-// In-memory fallback: on Vercel file writes fail, so new cases added via POST
-// are stored here. Same serverless instance will return them in GET.
+// In-memory fallback: on Vercel the filesystem is read-only, so writeFileSync
+// fails. New cases are stored here. Only the SAME serverless instance will
+// return them. Across instances/deploys/refreshes, new cases do NOT persist.
+// Production fix: use Vercel KV, Supabase, or Postgres.
 const runtimeMemoryStore: Case[] = [];
 
 function loadRuntimeCases(): Case[] {
