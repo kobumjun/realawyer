@@ -62,7 +62,13 @@ export default function AdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ keyword: keyword.trim() }),
       });
-      const data = await res.json();
+      let data: { error?: string } = {};
+      try {
+        data = await res.json();
+      } catch {
+        setMessage({ type: "err", text: res.statusText || "저장 실패" });
+        return;
+      }
       if (!res.ok) {
         setMessage({ type: "err", text: data.error || "저장 실패" });
         return;
@@ -72,8 +78,9 @@ export default function AdminPage() {
       fetchCases();
       router.refresh();
       router.push("/cases");
-    } catch {
-      setMessage({ type: "err", text: "오류가 발생했습니다." });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "오류가 발생했습니다.";
+      setMessage({ type: "err", text: msg });
     } finally {
       setLoading(false);
     }

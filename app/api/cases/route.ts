@@ -33,14 +33,24 @@ export async function POST(request: NextRequest) {
   if (!getAuthFromCookie(cookieHeader)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  const body = await request.json();
+  let body: { keyword?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "invalid json" }, { status: 400 });
+  }
   const { keyword } = body;
 
   if (!keyword || typeof keyword !== "string") {
     return NextResponse.json({ error: "keyword required" }, { status: 400 });
   }
 
-  const newCase = await addCaseFromKeyword(keyword.trim());
-
-  return NextResponse.json(newCase);
+  try {
+    const newCase = await addCaseFromKeyword(keyword.trim());
+    return NextResponse.json(newCase);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "저장 실패";
+    console.error("[POST /api/cases] insert failed:", e);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

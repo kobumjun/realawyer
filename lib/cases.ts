@@ -2,11 +2,17 @@ import type { Case } from "./types";
 import { getSupabase } from "./supabase";
 
 export function slugify(text: string): string {
-  return text
+  const raw = text
     .toLowerCase()
     .trim()
     .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-");
+    .replace(/\s+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  if (!raw || /^-*$/.test(raw)) {
+    return `case-${Date.now()}`;
+  }
+  return raw;
 }
 
 const CASE_TEMPLATES = [
@@ -100,19 +106,30 @@ export function generateCaseFromKeyword(keyword: string): Omit<Case, "id" | "cre
   };
 }
 
+async function ensureUniqueSlug(baseSlug: string): Promise<string> {
+  let slug = baseSlug;
+  let suffix = 1;
+  while (true) {
+    const existing = await getCaseBySlug(slug);
+    if (!existing) return slug;
+    slug = `${baseSlug}-${++suffix}`;
+  }
+}
+
 export async function addCaseFromKeyword(keyword: string): Promise<Case> {
   const generated = generateCaseFromKeyword(keyword);
   const now = new Date().toISOString();
+  const slug = await ensureUniqueSlug(generated.slug);
 
-  const row = {
-    slug: generated.slug,
+  const row: Record<string, unknown> = {
+    slug,
     title: generated.title,
     description: generated.description,
-    keywords: [generated.keywords],
-    victim_type: generated.victimType,
+    keywords: generated.keywords,
+    victim_type: generated.victimType ?? null,
     damage_type: null,
-    lawsuit_type: generated.lawsuitType,
-    required_documents: generated.documents,
+    lawsuit_type: generated.lawsuitType ?? null,
+    required_documents: generated.documents ?? null,
     process: generated.process,
     phone: generated.phone,
     status: generated.status,
