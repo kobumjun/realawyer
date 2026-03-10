@@ -17,34 +17,33 @@ export default function CasesPage() {
   return (
     <>
       <Header />
-      <div style={{ padding: "40px" }}>
-      <h1>현재 진행 중인 주요 사건</h1>
+      <div className="max-w-6xl mx-auto px-6 py-12">
+        <h1 className="text-2xl font-bold text-gray-900">
+          현재 진행 중인 주요 사건
+        </h1>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "20px",
-          marginTop: "20px",
-        }}
-      >
-        {cases.map((c: { slug: string; title: string; description: string }) => (
-          <div
-            key={c.slug}
-            style={{
-              border: "1px solid #eee",
-              padding: "20px",
-              borderRadius: "10px",
-            }}
-          >
-            <h3>{c.title}</h3>
-            <p>{c.description}</p>
-
-            <Link href={`/case/${c.slug}`}>사건상세보기</Link>
-          </div>
-        ))}
+        <div className="grid grid-cols-3 gap-6 mt-10">
+          {cases.map((c: { slug: string; title: string; description: string }) => (
+            <div
+              key={c.slug}
+              className="bg-white rounded-xl shadow-sm border p-6 hover:shadow-md transition"
+            >
+              <h3 className="text-lg font-semibold mb-2 text-gray-900">
+                {c.title}
+              </h3>
+              <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                {c.description}
+              </p>
+              <Link
+                href={`/case/${c.slug}`}
+                className="inline-block text-blue-600 font-medium hover:underline"
+              >
+                사건상세보기 →
+              </Link>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
     </>
   );
 }
