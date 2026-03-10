@@ -7,7 +7,7 @@ MVP Korean legal/claim-intake style SEO page generator.
 - Next.js 14 (App Router)
 - TypeScript
 - Tailwind CSS
-- Local JSON + in-memory storage (MVP)
+- Supabase (Postgres) for case storage
 
 ## Project Structure
 
@@ -43,21 +43,26 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+## Supabase Setup
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. Run `supabase/schema.sql` in the SQL Editor.
+3. Run `supabase/seed.sql` to insert initial cases.
+4. Add env vars to `.env.local`:
+   - `NEXT_PUBLIC_SUPABASE_URL` (Project Settings → API)
+   - `SUPABASE_SERVICE_ROLE_KEY` (Project Settings → API, service_role)
+
 ## Set Admin Password
 
-Create `.env.local` in the project root:
+Add to `.env.local`:
 
 ```
 ADMIN_PASSWORD=your-secret-password
 ```
 
-Then visit `/admin/login` and enter that password.
-
 ## Deploy to Vercel
 
 1. Push the project to GitHub.
-2. Go to [vercel.com](https://vercel.com) and import the repo.
-3. Add environment variable: `ADMIN_PASSWORD` = your secret password.
+2. Import the repo on [vercel.com](https://vercel.com).
+3. Add env vars: `ADMIN_PASSWORD`, `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
 4. Deploy.
-
-Note: Admin-created cases are stored in memory and will not persist across Vercel serverless restarts. For production, connect a database (e.g. Postgres, MongoDB) and replace the logic in `lib/cases.ts`.

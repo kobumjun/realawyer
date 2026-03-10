@@ -3,7 +3,7 @@ import { getCases, addCaseFromKeyword } from "@/lib/cases";
 import { getAuthFromCookie } from "@/lib/auth";
 
 export async function GET() {
-  const cases = getCases();
+  const cases = await getCases();
   return NextResponse.json(cases);
 }
 
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "keyword required" }, { status: 400 });
   }
 
-  const newCase = addCaseFromKeyword(keyword.trim());
+  const newCase = await addCaseFromKeyword(keyword.trim());
 
   return NextResponse.json(newCase);
 }

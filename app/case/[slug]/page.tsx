@@ -9,7 +9,7 @@ export default async function CasePage({
   params: { slug: string };
 }) {
   const slug = params?.slug;
-  const data = slug ? getCaseBySlug(slug) : null;
+  const data = slug ? await getCaseBySlug(slug) : null;
 
   if (!data) {
     return (

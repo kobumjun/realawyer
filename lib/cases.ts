@@ -1,37 +1,5 @@
 import type { Case } from "./types";
-import { readFileSync, writeFileSync, existsSync } from "fs";
-import path from "path";
-
-// Load initial cases from JSON (bundled at build)
-import initialCasesData from "@/data/cases.json";
-
-const RUNTIME_FILE = path.join(process.cwd(), "data", "runtime-cases.json");
-
-// In-memory fallback: on Vercel the filesystem is read-only, so writeFileSync
-// fails. New cases are stored here. Only the SAME serverless instance will
-// return them. Across instances/deploys/refreshes, new cases do NOT persist.
-// Production fix: use Vercel KV, Supabase, or Postgres.
-const runtimeMemoryStore: Case[] = [];
-
-function loadRuntimeCases(): Case[] {
-  try {
-    if (existsSync(RUNTIME_FILE)) {
-      const data = readFileSync(RUNTIME_FILE, "utf-8");
-      return JSON.parse(data);
-    }
-  } catch {
-    // fallback on read error
-  }
-  return [];
-}
-
-function saveRuntimeCases(cases: Case[]): void {
-  try {
-    writeFileSync(RUNTIME_FILE, JSON.stringify(cases, null, 2), "utf-8");
-  } catch {
-    // persist failed (e.g. read-only filesystem on Vercel) - in-memory fallback used
-  }
-}
+import { getSupabase } from "./supabase";
 
 export function slugify(text: string): string {
   return text
@@ -89,6 +57,30 @@ function getContentFromTemplate(keyword: string): string {
   return template(keyword);
 }
 
+function rowToCase(row: Record<string, unknown>): Case {
+  const kw = row.keywords;
+  const keywordsStr = Array.isArray(kw) ? (kw as string[]).join(",") : String(kw ?? "");
+  return {
+    id: String(row.id ?? ""),
+    slug: String(row.slug ?? ""),
+    title: String(row.title ?? ""),
+    description: String(row.description ?? ""),
+    content: row.content != null ? String(row.content) : undefined,
+    keywords: keywordsStr,
+    damageType: row.damage_type != null ? String(row.damage_type) : undefined,
+    litigationMethod: row.litigation_method != null ? String(row.litigation_method) : undefined,
+    requiredDocs: row.required_documents != null ? String(row.required_documents) : undefined,
+    victimType: row.victim_type != null ? String(row.victim_type) : undefined,
+    lawsuitType: row.lawsuit_type != null ? String(row.lawsuit_type) : undefined,
+    documents: row.required_documents != null ? String(row.required_documents) : undefined,
+    process: String(row.process ?? ""),
+    phone: String(row.phone ?? ""),
+    status: String(row.status ?? ""),
+    tagline: row.tagline != null ? String(row.tagline) : undefined,
+    createdAt: row.created_at != null ? String(row.created_at) : "",
+  };
+}
+
 export function generateCaseFromKeyword(keyword: string): Omit<Case, "id" | "createdAt"> {
   const k = keyword.trim();
   const slug = slugify(k);
@@ -108,51 +100,88 @@ export function generateCaseFromKeyword(keyword: string): Omit<Case, "id" | "cre
   };
 }
 
-export function addCaseFromKeyword(keyword: string): Case {
+export async function addCaseFromKeyword(keyword: string): Promise<Case> {
   const generated = generateCaseFromKeyword(keyword);
-  const id = `runtime-${Date.now()}`;
-  const createdAt = new Date().toISOString().slice(0, 10);
-  const newCase: Case = {
-    ...generated,
-    id,
-    createdAt,
+  const now = new Date().toISOString();
+
+  const row = {
+    slug: generated.slug,
+    title: generated.title,
+    description: generated.description,
+    keywords: [generated.keywords],
+    victim_type: generated.victimType,
+    damage_type: null,
+    lawsuit_type: generated.lawsuitType,
+    required_documents: generated.documents,
+    process: generated.process,
+    phone: generated.phone,
+    status: generated.status,
+    tagline: null,
+    created_at: now,
+    updated_at: now,
   };
-  const runtime = loadRuntimeCases();
-  runtime.push(newCase);
-  saveRuntimeCases(runtime);
-  runtimeMemoryStore.push(newCase);
-  return newCase;
+
+  const { data, error } = await getSupabase()
+    .from("cases")
+    .insert(row)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return rowToCase(data as Record<string, unknown>);
 }
 
-export function getCases(): Case[] {
-  const initial = (initialCasesData as Case[]).map((c) => ({
-    ...c,
-    id: c.id || `initial-${c.slug}`,
-  }));
-  const fromFile = loadRuntimeCases();
-  const bySlug = new Map<string, Case>();
-  [...fromFile, ...runtimeMemoryStore].forEach((c) => bySlug.set(c.slug, c));
-  return [...initial, ...Array.from(bySlug.values())];
+export async function getCases(): Promise<Case[]> {
+  const { data, error } = await getSupabase()
+    .from("cases")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []).map((row) => rowToCase(row as Record<string, unknown>));
 }
 
-export function getCaseBySlug(slug: string): Case | null {
-  const all = getCases();
-  return all.find((c) => c.slug === slug) ?? null;
+export async function getCaseBySlug(slug: string): Promise<Case | null> {
+  const { data, error } = await getSupabase()
+    .from("cases")
+    .select("*")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? rowToCase(data as Record<string, unknown>) : null;
 }
 
-export function addCase(data: Omit<Case, "id" | "slug" | "createdAt">): Case {
+export async function addCase(data: Omit<Case, "id" | "slug" | "createdAt">): Promise<Case> {
   const slug = slugify(data.title);
-  const id = `runtime-${Date.now()}`;
-  const createdAt = new Date().toISOString().slice(0, 10);
-  const newCase: Case = {
-    ...data,
+  const now = new Date().toISOString();
+  const keywordsArr = typeof data.keywords === "string"
+    ? data.keywords.split(",").map((s) => s.trim()).filter(Boolean)
+    : [data.keywords];
+
+  const row = {
     slug,
-    id,
-    createdAt,
+    title: data.title,
+    description: data.description ?? "",
+    keywords: keywordsArr.length ? keywordsArr : [data.keywords],
+    victim_type: data.victimType ?? null,
+    damage_type: data.damageType ?? null,
+    lawsuit_type: data.lawsuitType ?? null,
+    required_documents: data.requiredDocs ?? data.documents ?? null,
+    process: data.process ?? "",
+    phone: data.phone ?? "1588-0000",
+    status: data.status ?? "접수진행중",
+    tagline: data.tagline ?? null,
+    created_at: now,
+    updated_at: now,
   };
-  const runtime = loadRuntimeCases();
-  runtime.push(newCase);
-  saveRuntimeCases(runtime);
-  runtimeMemoryStore.push(newCase);
-  return newCase;
+
+  const { data: inserted, error } = await getSupabase()
+    .from("cases")
+    .insert(row)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return rowToCase(inserted as Record<string, unknown>);
 }

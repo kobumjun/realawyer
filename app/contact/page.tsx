@@ -9,8 +9,8 @@ export const metadata = {
   description: "금융사기 피해 관련 상담 접수. 전문 담당자 검토 후 연락드립니다.",
 };
 
-export default function ContactPage() {
-  const cases = getCases();
+export default async function ContactPage() {
+  const cases = await getCases();
 
   return (
     <div className="min-h-screen bg-slate-50">
