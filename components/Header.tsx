@@ -7,7 +7,7 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur shadow-sm">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link href="/cases" className="text-lg font-bold text-slate-800">
-          SEDAM Attorneys at Law
+          법무법인 신결
         </Link>
 
         <nav className="hidden md:flex items-center gap-8">

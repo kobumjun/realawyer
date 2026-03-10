@@ -14,7 +14,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "SEDAM 법률사무소 | 금융사기 단체소송 원클릭 접수센터",
+  title: "법무법인 신결 | 금융사기 단체소송 원클릭 접수센터",
   description:
     "금융사기 단체소송 전문. 각 사건별 소송위임에서 환부신청까지. 24시간 상담.",
 };

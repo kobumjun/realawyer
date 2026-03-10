@@ -1,7 +1,7 @@
 import Header from "@/components/Header";
 
 export const metadata = {
-  title: "단체소송 진행 절차 | SEDAM 법률사무소",
+  title: "단체소송 진행 절차 | 법무법인 신결",
   description: "상담 신청부터 피해 회복까지 단체소송 진행 절차 안내.",
 };
 

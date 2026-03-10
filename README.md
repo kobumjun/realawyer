@@ -1,4 +1,4 @@
-# SEDAM 법률사무소 – 금융사기 단체소송 접수센터
+# 법무법인 신결 – 금융사기 단체소송 접수센터
 
 MVP Korean legal/claim-intake style SEO page generator.
 

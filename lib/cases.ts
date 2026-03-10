@@ -152,6 +152,15 @@ export async function getCaseBySlug(slug: string): Promise<Case | null> {
   return data ? rowToCase(data as Record<string, unknown>) : null;
 }
 
+export async function deleteCaseById(id: string): Promise<void> {
+  const { error } = await getSupabase()
+    .from("cases")
+    .delete()
+    .eq("id", id);
+
+  if (error) throw error;
+}
+
 export async function addCase(data: Omit<Case, "id" | "slug" | "createdAt">): Promise<Case> {
   const slug = slugify(data.title);
   const now = new Date().toISOString();

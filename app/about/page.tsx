@@ -1,7 +1,7 @@
 import Header from "@/components/Header";
 
 export const metadata = {
-  title: "금융사기 피해 대응 전문 로펌 | SEDAM 법률사무소",
+  title: "금융사기 피해 대응 전문 로펌 | 법무법인 신결",
   description: "보이스피싱, 투자사기, 가상자산 사기 등 금융범죄 피해 대응 전문.",
 };
 

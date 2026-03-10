@@ -1,14 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
+type CaseItem = { id: string; slug: string; title: string };
 
 export default function AdminPage() {
   const [keyword, setKeyword] = useState("");
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [cases, setCases] = useState<CaseItem[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const router = useRouter();
+
+  function fetchCases() {
+    fetch("/api/cases", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((list: { id?: string; slug?: string; title?: string }[]) => {
+        const items = (list || [])
+          .filter((c) => c?.id && c?.slug)
+          .map((c) => ({ id: c.id!, slug: c.slug!, title: c.title || c.slug || "-" }));
+        setCases(items);
+      })
+      .catch(() => setCases([]));
+  }
+
+  useEffect(() => {
+    fetchCases();
+  }, []);
+
+  async function handleDelete(id: string) {
+    if (!confirm("정말 이 사건을 삭제하시겠습니까?")) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/cases?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setMessage({ type: "err", text: data.error || "삭제 실패" });
+        return;
+      }
+      setMessage({ type: "ok", text: "삭제되었습니다." });
+      fetchCases();
+      router.refresh();
+    } catch {
+      setMessage({ type: "err", text: "오류가 발생했습니다." });
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,6 +69,7 @@ export default function AdminPage() {
       }
       setMessage({ type: "ok", text: "사건이 등록되었습니다." });
       setKeyword("");
+      fetchCases();
       router.refresh();
       router.push("/cases");
     } catch {
@@ -81,6 +124,35 @@ export default function AdminPage() {
             {loading ? "저장 중..." : "사건 등록"}
           </button>
         </form>
+
+        <section className="mt-10 rounded-xl bg-white p-6 shadow">
+          <h2 className="mb-4 text-lg font-bold text-slate-800">등록된 사건</h2>
+          {cases.length === 0 ? (
+            <p className="text-slate-500 text-sm">등록된 사건이 없습니다.</p>
+          ) : (
+            <ul className="space-y-3">
+              {cases.map((c) => (
+                <li
+                  key={c.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 px-4 py-3"
+                >
+                  <div>
+                    <span className="font-medium text-slate-800">{c.title}</span>
+                    <span className="ml-2 text-slate-500 text-sm">{c.slug}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(c.id)}
+                    disabled={deletingId === c.id}
+                    className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                  >
+                    {deletingId === c.id ? "삭제 중..." : "삭제"}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </main>
     </div>
   );
