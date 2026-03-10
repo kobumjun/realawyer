@@ -23,25 +23,27 @@ export default function CasesPage() {
         </h1>
 
         <div className="grid grid-cols-3 gap-6 mt-10">
-          {cases.map((c: { slug: string; title: string; description: string }) => (
-            <div
-              key={c.slug}
-              className="bg-white rounded-xl shadow-sm border p-6 hover:shadow-md transition"
-            >
-              <h3 className="text-lg font-semibold mb-2 text-gray-900">
-                {c.title}
-              </h3>
-              <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                {c.description}
-              </p>
-              <Link
-                href={`/case/${c.slug}`}
-                className="inline-block text-blue-600 font-medium hover:underline"
+          {cases
+            .filter((c: { slug?: string }) => c?.slug)
+            .map((c: { slug: string; title: string; description: string }) => (
+              <div
+                key={c.slug}
+                className="bg-white rounded-xl shadow-sm border p-6 hover:shadow-md transition"
               >
-                사건상세보기 →
-              </Link>
-            </div>
-          ))}
+                <h3 className="text-lg font-semibold mb-2 text-gray-900">
+                  {c.title}
+                </h3>
+                <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                  {c.description}
+                </p>
+                <Link
+                  href={`/case/${c.slug}`}
+                  className="inline-block text-blue-600 font-medium hover:underline"
+                >
+                  사건상세보기 →
+                </Link>
+              </div>
+            ))}
         </div>
       </div>
     </>

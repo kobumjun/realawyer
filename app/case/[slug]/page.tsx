@@ -1,20 +1,14 @@
 import Header from "@/components/Header";
+import { getCaseBySlug } from "@/lib/cases";
 
-async function getCase(slug: string) {
-  const base =
-    process.env.NEXT_PUBLIC_BASE_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-  const res = await fetch(`${base}/api/cases`, { cache: "no-store" });
-  const data = await res.json();
-  return data.find((c: { slug: string }) => c.slug === slug);
-}
+export const dynamic = "force-dynamic";
 
 export default async function CasePage({
   params,
 }: {
   params: { slug: string };
 }) {
-  const data = await getCase(params.slug);
+  const data = getCaseBySlug(params.slug);
 
   if (!data) {
     return (
