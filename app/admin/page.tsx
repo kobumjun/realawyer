@@ -27,7 +27,7 @@ export default function AdminPage() {
       }
       setMessage({ type: "ok", text: "사건이 등록되었습니다." });
       setKeyword("");
-      router.push("/");
+      router.push("/cases");
       router.refresh();
     } catch {
       setMessage({ type: "err", text: "오류가 발생했습니다." });
@@ -40,7 +40,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-slate-100">
       <header className="border-b bg-white px-4 py-4">
         <div className="mx-auto flex max-w-4xl items-center justify-between">
-          <Link href="/" className="text-blue-600 hover:underline">
+          <Link href="/cases" className="text-blue-600 hover:underline">
             ← 홈으로
           </Link>
           <h1 className="text-lg font-bold text-slate-800">관리자 - 사건 등록</h1>
