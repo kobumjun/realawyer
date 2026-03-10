@@ -70,7 +70,8 @@ export default function AdminPage() {
         return;
       }
       if (!res.ok) {
-        setMessage({ type: "err", text: data.error || "저장 실패" });
+        const errText = [data.error, (data as { details?: string }).details].filter(Boolean).join(" — ") || "저장 실패";
+        setMessage({ type: "err", text: errText });
         return;
       }
       setMessage({ type: "ok", text: "사건이 등록되었습니다." });

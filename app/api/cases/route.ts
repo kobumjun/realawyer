@@ -49,8 +49,13 @@ export async function POST(request: NextRequest) {
     const newCase = await addCaseFromKeyword(keyword.trim());
     return NextResponse.json(newCase);
   } catch (e) {
-    const message = e instanceof Error ? e.message : "저장 실패";
+    const err = e as { message?: string; details?: string; hint?: string; code?: string };
+    const message = err?.message ?? (e instanceof Error ? e.message : "저장 실패");
+    const details = err?.details ?? err?.hint ?? "";
     console.error("[POST /api/cases] insert failed:", e);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: message, ...(details && { details }) },
+      { status: 500 }
+    );
   }
 }

@@ -88,8 +88,9 @@ function rowToCase(row: Record<string, unknown>): Case {
 }
 
 export function generateCaseFromKeyword(keyword: string): Omit<Case, "id" | "createdAt"> {
-  const k = keyword.trim();
-  const slug = slugify(k);
+  const k = keyword.trim() || "case";
+  const baseSlug = slugify(k);
+  const slug = baseSlug || `case-${Date.now()}`;
   const content = getContentFromTemplate(k);
   return {
     slug,
