@@ -15,13 +15,29 @@ function formatDetailHero(data: Case) {
   return { headline, subline };
 }
 
+function formatRequiredDocs(raw: string | undefined): string {
+  const content = (raw || "").trim();
+  if (!content || content === "-") {
+    return "상담 접수 시 담당자가 필요 서류를 안내드립니다.";
+  }
+  return `참여 의사 확인 시 아래 서류를 제출해 주시기 바랍니다.\n\n${content}`;
+}
+
+function formatProcess(raw: string | undefined): string {
+  const content = (raw || "").trim();
+  if (!content || content === "-") {
+    return "상담 접수 후 단계별로 안내드립니다.";
+  }
+  return `참여 신청 후 진행되는 절차는 다음과 같습니다.\n\n${content}`;
+}
+
 function InfoGrid({ data }: { data: Case }) {
   const items: { title: string; content: string }[] = [
     { title: "모집대상 / 소송 참여 자격", content: data.victimType || data.description || "-" },
     { title: "피해유형", content: data.damageType || "-" },
     { title: "소송방식", content: data.lawsuitType || data.litigationMethod || "-" },
-    { title: "필요서류", content: data.requiredDocs || data.documents || "-" },
-    { title: "진행절차", content: data.process || "-" },
+    { title: "필요서류", content: formatRequiredDocs(data.requiredDocs || data.documents) },
+    { title: "진행절차", content: formatProcess(data.process) },
     { title: "상담비용 / 상담안내", content: data.phone ? `상담 전화: ${data.phone}` : "상담 신청 시 안내" },
   ];
 
