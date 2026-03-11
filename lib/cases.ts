@@ -38,7 +38,21 @@ export function slugifyForSeo(title: string): string {
     .replace(/^-+|-+$/g, "");
 
   if (!s) return `case-${Date.now()}`;
-  return s;
+  return s.normalize("NFC");
+}
+
+/**
+ * Normalize slug for DB lookup: decode URL encoding and use canonical Unicode (NFC).
+ * Use this when reading slug from URL params so it matches stored slugs.
+ */
+export function normalizeSlugForLookup(slug: string): string {
+  if (!slug || typeof slug !== "string") return "";
+  try {
+    const decoded = decodeURIComponent(slug);
+    return decoded.trim().normalize("NFC");
+  } catch {
+    return slug.trim().normalize("NFC");
+  }
 }
 
 const CASE_TEMPLATES = [
@@ -187,10 +201,12 @@ export async function getCases(): Promise<Case[]> {
 }
 
 export async function getCaseBySlug(slug: string): Promise<Case | null> {
+  const normalized = normalizeSlugForLookup(slug);
+  if (!normalized) return null;
   const { data, error } = await getSupabase()
     .from("cases")
     .select("*")
-    .eq("slug", slug)
+    .eq("slug", normalized)
     .maybeSingle();
 
   if (error) throw error;

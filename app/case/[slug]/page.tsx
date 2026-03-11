@@ -4,7 +4,7 @@ import HeroSection from "@/components/ui/HeroSection";
 import InfoBox from "@/components/ui/InfoBox";
 import CTASection from "@/components/ui/CTASection";
 import SectionHeader from "@/components/ui/SectionHeader";
-import { getCaseBySlug } from "@/lib/cases";
+import { getCaseBySlug, normalizeSlugForLookup } from "@/lib/cases";
 import type { Case } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,8 @@ export async function generateMetadata({
 }: {
   params: { slug: string };
 }): Promise<Metadata> {
-  const slug = params?.slug;
+  const rawSlug = params?.slug;
+  const slug = rawSlug ? normalizeSlugForLookup(rawSlug) : "";
   const data = slug ? await getCaseBySlug(slug) : null;
   if (!data) return { title: "사건을 찾을 수 없습니다 | 법무법인 신결" };
   const title = `${data.title} | 법무법인 신결`;
@@ -25,7 +26,7 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: { canonical: `${BASE}/case/${slug}` },
+    alternates: { canonical: `${BASE}/case/${encodeURIComponent(slug)}` },
   };
 }
 
@@ -73,7 +74,8 @@ export default async function CasePage({
 }: {
   params: { slug: string };
 }) {
-  const slug = params?.slug;
+  const rawSlug = params?.slug;
+  const slug = rawSlug ? normalizeSlugForLookup(rawSlug) : "";
   const data = slug ? await getCaseBySlug(slug) : null;
 
   if (!data) {
