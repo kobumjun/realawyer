@@ -1,6 +1,10 @@
 import type { Case } from "./types";
 import { getSupabase } from "./supabase";
 
+/**
+ * Slugify for legacy/numeric fallback (strips non-ASCII).
+ * Use slugifyForSeo for new SEO-friendly slugs.
+ */
 export function slugify(text: string): string {
   const raw = text
     .toLowerCase()
@@ -13,6 +17,28 @@ export function slugify(text: string): string {
     return `case-${Date.now()}`;
   }
   return raw;
+}
+
+/**
+ * SEO-friendly slug from title. Preserves Korean (Hangul) and ASCII.
+ * - Keeps letters (incl. Hangul), numbers, spaces, hyphens
+ * - Spaces → hyphens, collapse repeated, trim
+ * - Removes unsafe URL chars
+ * - Fallback to case-{timestamp} if empty
+ */
+export function slugifyForSeo(title: string): string {
+  if (!title || typeof title !== "string") return `case-${Date.now()}`;
+  // Keep: Hangul syllables (AC00-D7A3), Hangul Jamo (3130-318F), Latin, digits, space, hyphen
+  const keepRegex = /[\u3130-\u318F\uAC00-\uD7A3A-Za-z0-9\s-]/g;
+  const kept = title.match(keepRegex);
+  const s = (kept || []).join("")
+    .trim()
+    .replace(/[\s]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  if (!s) return `case-${Date.now()}`;
+  return s;
 }
 
 const CASE_TEMPLATES = [
@@ -90,12 +116,12 @@ function rowToCase(row: Record<string, unknown>): Case {
 
 export function generateCaseFromKeyword(keyword: string): Omit<Case, "id" | "createdAt"> {
   const k = keyword.trim() || "case";
-  const baseSlug = slugify(k);
-  const slug = baseSlug || `case-${Date.now()}`;
+  const title = `${k} 투자 피해 사건`;
+  const baseSlug = slugifyForSeo(title);
   const content = getContentFromTemplate(k);
   return {
-    slug,
-    title: `${k} 투자 피해 사건`,
+    slug: baseSlug,
+    title,
     description: content,
     content,
     keywords: k,
@@ -181,13 +207,14 @@ export async function deleteCaseById(id: string): Promise<void> {
 }
 
 export async function addCase(data: Omit<Case, "id" | "slug" | "createdAt">): Promise<Case> {
-  const slug = slugify(data.title);
+  const baseSlug = slugifyForSeo(data.title);
+  const slug = await ensureUniqueSlug(baseSlug);
   const now = new Date().toISOString();
   const keywordsArr = typeof data.keywords === "string"
     ? data.keywords.split(",").map((s) => s.trim()).filter(Boolean)
     : [data.keywords];
 
-  const row = {
+  const row: Record<string, unknown> = {
     slug,
     title: data.title,
     description: data.description ?? "",

@@ -9,6 +9,8 @@ import type { Case } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
+const BASE = "https://realawyer.vercel.app";
+
 export async function generateMetadata({
   params,
 }: {
@@ -18,15 +20,17 @@ export async function generateMetadata({
   const data = slug ? await getCaseBySlug(slug) : null;
   if (!data) return { title: "사건을 찾을 수 없습니다 | 법무법인 신결" };
   const title = `${data.title} | 법무법인 신결`;
-  const description = data.description?.slice(0, 160) || `${data.title} - 법무법인 신결`;
-  return { title, description };
+  const description =
+    data.description?.slice(0, 160) || `${data.title} - 금융사기 피해 법률 상담 | 법무법인 신결`;
+  return {
+    title,
+    description,
+    alternates: { canonical: `${BASE}/case/${slug}` },
+  };
 }
 
-function formatDetailHero(data: Case) {
-  const kw = (data.keywords || "").trim();
-  const headline = kw ? `[${kw}] 사칭·사기 의심` : data.title;
-  const subline = data.status || "피해자 단체소송 접수 진행중";
-  return { headline, subline };
+function getHeroSubline(data: Case): string {
+  return data.status || "피해자 단체소송 접수 진행중";
 }
 
 function formatRequiredDocs(raw: string | undefined): string {
@@ -83,14 +87,12 @@ export default async function CasePage({
     );
   }
 
-  const { headline, subline } = formatDetailHero(data);
-
   return (
     <>
       <Header />
       <HeroSection
-        title={headline}
-        subtitle={subline}
+        title={data.title}
+        subtitle={getHeroSubline(data)}
         supportingLine={data.tagline}
       />
 
