@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://realawyer.vercel.app/sitemap.xml
