@@ -84,6 +84,7 @@ function rowToCase(row: Record<string, unknown>): Case {
     status: String(row.status ?? ""),
     tagline: row.tagline != null ? String(row.tagline) : undefined,
     createdAt: row.created_at != null ? String(row.created_at) : "",
+    updatedAt: row.updated_at != null ? String(row.updated_at) : undefined,
   };
 }
 

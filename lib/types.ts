@@ -16,4 +16,5 @@ export interface Case {
   status: string;
   tagline?: string;
   createdAt: string;
+  updatedAt?: string;
 }
