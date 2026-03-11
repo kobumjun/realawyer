@@ -11,6 +11,11 @@ export function getSupabase(): SupabaseClient {
       "Missing Supabase env: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are required"
     );
   }
-  _client = createClient(url, key);
+  _client = createClient(url, key, {
+    global: {
+      fetch: (input, init) =>
+        fetch(input, { ...init, cache: "no-store" }),
+    },
+  });
   return _client;
 }
