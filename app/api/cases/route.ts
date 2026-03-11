@@ -33,21 +33,36 @@ export async function POST(request: NextRequest) {
   if (!getAuthFromCookie(cookieHeader)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  let body: { keyword?: string };
+  let body: { keyword?: string; keywords?: string[] };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "invalid json" }, { status: 400 });
   }
-  const { keyword } = body;
 
-  if (!keyword || typeof keyword !== "string") {
-    return NextResponse.json({ error: "keyword required" }, { status: 400 });
+  const keywords: string[] = [];
+  if (Array.isArray(body.keywords) && body.keywords.length > 0) {
+    keywords.push(...body.keywords.filter((k): k is string => typeof k === "string").map((k) => k.trim()).filter(Boolean));
+  } else if (body.keyword && typeof body.keyword === "string" && body.keyword.trim()) {
+    keywords.push(body.keyword.trim());
   }
 
+  if (keywords.length === 0) {
+    return NextResponse.json({ error: "keyword or keywords required" }, { status: 400 });
+  }
+
+  const uniqueKeywords = Array.from(new Set(keywords));
+
   try {
-    const newCase = await addCaseFromKeyword(keyword.trim());
-    return NextResponse.json(newCase);
+    const created: unknown[] = [];
+    for (const kw of uniqueKeywords) {
+      const c = await addCaseFromKeyword(kw);
+      created.push(c);
+    }
+    if (created.length === 1) {
+      return NextResponse.json(created[0]);
+    }
+    return NextResponse.json({ created: created.length, cases: created });
   } catch (e) {
     const err = e as { message?: string; details?: string; hint?: string; code?: string };
     const message = err?.message ?? (e instanceof Error ? e.message : "저장 실패");

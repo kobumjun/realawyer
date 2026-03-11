@@ -5,10 +5,13 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import HeroSection from "@/components/ui/HeroSection";
 
+const PER_PAGE = 12;
+
 export default function CasesPage() {
   const [cases, setCases] = useState<
     { slug?: string; title: string; description: string }[]
   >([]);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     fetch(`/api/cases?t=${Date.now()}`, { cache: "no-store" })
@@ -16,6 +19,12 @@ export default function CasesPage() {
       .then(setCases)
       .catch(console.error);
   }, []);
+
+  const filtered = cases.filter((c) => c?.slug);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const currentPage = Math.min(page, totalPages);
+  const start = (currentPage - 1) * PER_PAGE;
+  const pageCases = filtered.slice(start, start + PER_PAGE);
 
   return (
     <>
@@ -37,9 +46,7 @@ export default function CasesPage() {
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {cases
-            .filter((c) => c?.slug)
-            .map((c) => (
+          {pageCases.map((c) => (
               <article
                 key={c.slug}
                 className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-blue-100 hover:shadow-md"
@@ -60,6 +67,41 @@ export default function CasesPage() {
               </article>
             ))}
         </div>
+
+        {totalPages > 1 && (
+          <nav className="mt-12 flex flex-wrap items-center justify-center gap-2" aria-label="페이지">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage <= 1}
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Prev
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setPage(p)}
+                className={`min-w-[2.25rem] rounded-lg px-3 py-1.5 text-sm font-medium ${
+                  p === currentPage
+                    ? "bg-blue-600 text-white"
+                    : "border border-slate-300 text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages}
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </nav>
+        )}
       </div>
     </>
   );

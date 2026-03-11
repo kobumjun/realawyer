@@ -6,8 +6,16 @@ import { useRouter } from "next/navigation";
 
 type CaseItem = { id: string; slug: string; title: string };
 
+function parseKeywords(input: string): string[] {
+  const parts = input
+    .split(/[\n,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return Array.from(new Set(parts));
+}
+
 export default function AdminPage() {
-  const [keyword, setKeyword] = useState("");
+  const [keywordInput, setKeywordInput] = useState("");
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [cases, setCases] = useState<CaseItem[]>([]);
@@ -55,14 +63,19 @@ export default function AdminPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMessage(null);
+    const keywords = parseKeywords(keywordInput);
+    if (keywords.length === 0) {
+      setMessage({ type: "err", text: "최소 하나의 키워드를 입력해 주세요." });
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch("/api/cases", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ keyword: keyword.trim() }),
+        body: JSON.stringify({ keywords }),
       });
-      let data: { error?: string } = {};
+      let data: { error?: string; details?: string; created?: number } = {};
       try {
         data = await res.json();
       } catch {
@@ -70,12 +83,13 @@ export default function AdminPage() {
         return;
       }
       if (!res.ok) {
-        const errText = [data.error, (data as { details?: string }).details].filter(Boolean).join(" — ") || "저장 실패";
+        const errText = [data.error, data.details].filter(Boolean).join(" — ") || "저장 실패";
         setMessage({ type: "err", text: errText });
         return;
       }
-      setMessage({ type: "ok", text: "사건이 등록되었습니다." });
-      setKeyword("");
+      const count = data.created ?? 1;
+      setMessage({ type: "ok", text: count === 1 ? "사건이 등록되었습니다." : `${count}개의 사건이 생성되었습니다.` });
+      setKeywordInput("");
       fetchCases();
       router.refresh();
       router.push("/cases");
@@ -110,17 +124,17 @@ export default function AdminPage() {
             <label className="block text-sm font-medium text-slate-700 mb-1">
               키워드
             </label>
-            <input
-              name="keyword"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
+            <textarea
+              name="keywords"
+              value={keywordInput}
+              onChange={(e) => setKeywordInput(e.target.value)}
               placeholder="예: 루나, FTX, 전세사기"
-              className="w-full rounded-lg border border-slate-300 px-4 py-2.5"
-              required
+              rows={5}
+              className="w-full rounded-lg border border-slate-300 px-4 py-2.5 resize-y"
               autoFocus
             />
             <p className="mt-1 text-xs text-slate-500">
-              키워드만 입력하면 title, description, content 등이 자동 생성됩니다.
+              한 줄에 하나씩 또는 쉼표로 여러 키워드를 입력할 수 있습니다. 키워드만 입력하면 title, description 등이 자동 생성됩니다.
             </p>
           </div>
 
